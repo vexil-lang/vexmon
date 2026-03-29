@@ -1,3 +1,6 @@
+//! Memory collector — used/total RAM, swap, and estimated cached bytes.
+//! Uses `System::used_memory`, `total_memory`, `free_memory`, and swap APIs.
+
 use crate::generated::MemorySnapshot;
 use sysinfo::System;
 

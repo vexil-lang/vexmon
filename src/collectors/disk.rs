@@ -1,3 +1,6 @@
+//! Disk collector — name, mount point, total/used space (GB) per disk.
+//! Uses `sysinfo::Disks` to enumerate all mounted volumes.
+
 use crate::generated::DiskInfo;
 use sysinfo::Disks;
 

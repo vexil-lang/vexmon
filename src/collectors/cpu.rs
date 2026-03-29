@@ -1,3 +1,6 @@
+//! CPU collector — overall usage (%), per-core usage, and frequency.
+//! Uses `System::global_cpu_usage` and `System::cpus` from sysinfo.
+
 use crate::generated::CpuSnapshot;
 use sysinfo::System;
 

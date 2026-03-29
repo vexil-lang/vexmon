@@ -1,3 +1,6 @@
+//! System info collector — hostname, OS, kernel, CPU brand, core count, uptime.
+//! Uses sysinfo static methods (`System::host_name`, etc.) plus per-CPU data.
+
 use crate::generated::SystemInfo;
 use sysinfo::System;
 

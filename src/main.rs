@@ -1,3 +1,22 @@
+//! vexmon — real-time system monitor over Vexil binary WebSocket.
+//!
+//! Serves an axum HTTP + WebSocket server on `127.0.0.1:3000`. On each
+//! WebSocket connection the client sends a schema handshake (BLAKE3 hash +
+//! version) and the server verifies compatibility before streaming data.
+//!
+//! Telemetry is encoded as a Vexil `TelemetryFrame` union — each WebSocket
+//! message is a single union variant, bit-packed via `vexil-runtime`. This
+//! allows different data types to update at different intervals over one
+//! connection:
+//!
+//! - **CPU + Memory** — every 1 second
+//! - **Network** — every 2 seconds
+//! - **Disk + Processes** — every 5 seconds
+//! - **System info** — once on connect
+//!
+//! All panels are populated immediately on connect (via `send_all`), then
+//! the staggered intervals take over.
+
 #[path = "generated.rs"]
 #[allow(dead_code)]
 mod generated;
@@ -174,6 +193,7 @@ async fn send_all(
     Ok(())
 }
 
+/// Bit-pack a `TelemetryFrame` and send it as a binary WebSocket message.
 async fn send_frame(socket: &mut WebSocket, frame: &TelemetryFrame) -> Result<(), ()> {
     let mut w = BitWriter::new();
     if frame.pack(&mut w).is_err() {

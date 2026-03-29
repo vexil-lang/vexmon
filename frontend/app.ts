@@ -1,11 +1,24 @@
+/**
+ * vexmon frontend — WebSocket client, binary decoder, and DOM renderer.
+ *
+ * Connection flow:
+ *   1. Open WebSocket to /ws
+ *   2. Send a SchemaHandshake (BLAKE3 hash + version) as binary
+ *   3. Server verifies hash match, then streams TelemetryFrame unions
+ *   4. Each binary message is decoded via the generated decodeTelemetryFrame()
+ *   5. The union tag ('Cpu', 'Memory', etc.) dispatches to the right renderer
+ *
+ * On disconnect the client auto-reconnects after 2 seconds.
+ */
+
 import { BitReader, SchemaHandshake } from '@vexil-lang/runtime';
 import { SCHEMA_HASH, decodeTelemetryFrame, type TelemetryFrame } from './generated.js';
 
-// State
+// Bandwidth tracking state
 let totalBytes = 0;
 let lastSecondBytes = 0;
 const bpsHistory: number[] = [];
-const BPS_WINDOW = 5; // 5-second rolling average
+const BPS_WINDOW = 5; // rolling average window in seconds
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -161,7 +174,7 @@ function renderNetwork(frame: TelemetryFrame & { tag: 'Network' }, bytes: number
   }
 }
 
-// Process state
+// Process table state — supports search filtering and column sort toggling
 let lastProcesses: any[] = [];
 let procSortCol = 'cpu';
 let procSortDir: 'asc' | 'desc' = 'desc';
@@ -328,7 +341,8 @@ function connect() {
   ws.onerror = () => ws.close();
 }
 
-// BPS tracker — 5-second rolling average + peak for context
+// BPS tracker — samples bytes-per-second each tick, keeps a 5-second rolling
+// average, and estimates the JSON equivalent at ~12x the binary size.
 let peakBps = 0;
 
 setInterval(() => {

@@ -1,3 +1,7 @@
+//! Process collector — top N processes sorted by CPU usage.
+//! Uses `System::processes` from sysinfo, maps `ProcessStatus` to the
+//! Vexil `ProcessState` enum.
+
 use crate::generated::{ProcessInfo, ProcessState};
 use sysinfo::{ProcessStatus, System};
 

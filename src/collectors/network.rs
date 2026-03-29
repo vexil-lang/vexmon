@@ -1,3 +1,6 @@
+//! Network collector — per-interface RX/TX rates and totals.
+//! Uses `sysinfo::Networks` to enumerate active network interfaces.
+
 use crate::generated::NetworkInfo;
 use sysinfo::Networks;
 

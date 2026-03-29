@@ -1,11 +1,28 @@
+# vexmon telemetry schema
+#
+# Defines the wire format for real-time system monitoring over WebSocket.
+# Both Rust (backend) and TypeScript (browser) code is generated from this
+# single file via `vexilc codegen`.
+#
+# Vexil features showcased:
+#   - messages with typed fields (u8, u16, u32, u64, string)
+#   - array<T> for variable-length collections (per-core CPU, disk list, etc.)
+#   - enum with explicit ordinals for process state
+#   - union for multiplexing different frame types over one WebSocket
+#   - schema handshake (BLAKE3 hash) for client/server compatibility check
+
 namespace vexmon
 
+# CPU usage: overall % plus per-core breakdown. Sent every 1s.
+# u8 is sufficient for percentage (0-100); array<u8> scales to any core count.
 message CpuSnapshot {
     overall     @0 : u8
     per_core    @1 : array<u8>
     frequency   @2 : u16
 }
 
+# Memory usage: byte-precise values using u64 for modern systems with >4 GB.
+# Sent every 1s. cached_bytes is estimated (total - used - free).
 message MemorySnapshot {
     used_bytes   @0 : u64
     total_bytes  @1 : u64
@@ -14,6 +31,8 @@ message MemorySnapshot {
     cached_bytes @4 : u64
 }
 
+# Per-disk info. Sent every 5s. u32 is enough for GB (up to 4 TB);
+# read/write BPS use u64 for high-throughput NVMe devices.
 message DiskInfo {
     name       @0 : string
     mount      @1 : string
@@ -23,6 +42,8 @@ message DiskInfo {
     write_bps  @5 : u64
 }
 
+# Per-interface network counters. Sent every 2s.
+# rx/tx_bps are bytes-per-interval; total_rx/tx are cumulative.
 message NetworkInfo {
     name        @0 : string
     rx_bps      @1 : u64
@@ -31,6 +52,7 @@ message NetworkInfo {
     total_tx    @4 : u64
 }
 
+# Maps sysinfo::ProcessStatus to a compact 3-bit enum on the wire.
 enum ProcessState {
     Running  @0
     Sleeping @1
@@ -39,6 +61,7 @@ enum ProcessState {
     Unknown  @4
 }
 
+# Per-process snapshot. Top 50 by CPU usage, sent every 5s.
 message ProcessInfo {
     pid      @0 : u32
     name     @1 : string
@@ -47,6 +70,7 @@ message ProcessInfo {
     state    @4 : ProcessState
 }
 
+# Static system info — sent once on connect.
 message SystemInfo {
     hostname    @0 : string
     os_name     @1 : string
@@ -57,6 +81,9 @@ message SystemInfo {
     cpu_count   @6 : u8
 }
 
+# The union is the key pattern: each WebSocket message is one variant.
+# This lets the server send different data types at different intervals
+# (CPU every 1s, disks every 5s, etc.) while the client dispatches by tag.
 union TelemetryFrame {
     Cpu       @0 { snapshot @0 : CpuSnapshot }
     Memory    @1 { snapshot @0 : MemorySnapshot }
