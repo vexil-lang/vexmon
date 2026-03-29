@@ -1,13 +1,11 @@
 namespace vexmon
 
-@delta
 message CpuSnapshot {
     overall     @0 : u8
     per_core    @1 : array<u8>
     frequency   @2 : u16
 }
 
-@delta
 message MemorySnapshot {
     used_bytes   @0 : u64
     total_bytes  @1 : u64

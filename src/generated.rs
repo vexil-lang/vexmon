@@ -3,7 +3,7 @@
 
 use vexil_runtime::*;
 
-pub const SCHEMA_HASH: [u8; 32] = [0x87, 0xe7, 0x6c, 0x0b, 0xc2, 0x09, 0x03, 0x0b, 0x0c, 0x2f, 0x0b, 0xd9, 0x1f, 0x2b, 0x1d, 0xf2, 0x30, 0xcd, 0x78, 0x56, 0x0d, 0x48, 0xad, 0x94, 0x92, 0xee, 0xb2, 0x46, 0x32, 0x33, 0x94, 0x27];
+pub const SCHEMA_HASH: [u8; 32] = [0x11, 0x04, 0x0f, 0x6c, 0x1b, 0x48, 0x52, 0x2c, 0x42, 0xf8, 0x84, 0x75, 0x9f, 0xd8, 0xee, 0x67, 0xfc, 0xec, 0xa0, 0x80, 0xe7, 0x78, 0xc3, 0x8e, 0xbe, 0x93, 0x75, 0xeb, 0x38, 0x52, 0x3e, 0xbe];
 
 // ── CpuSnapshot ──
 #[derive(Debug, Clone, PartialEq)]
@@ -16,12 +16,12 @@ pub struct CpuSnapshot {
 
 impl vexil_runtime::Pack for CpuSnapshot {
     fn pack(&self, w: &mut vexil_runtime::BitWriter) -> Result<(), vexil_runtime::EncodeError> {
-        w.write_leb128(self.overall as u64);
+        w.write_u8(self.overall);
         w.write_leb128(self.per_core.len() as u64);
         for item in &self.per_core {
             w.write_u8(*item);
         }
-        w.write_leb128(self.frequency as u64);
+        w.write_u16(self.frequency);
         w.flush_to_byte_boundary();
         if !self._unknown.is_empty() {
             w.write_raw_bytes(&self._unknown);
@@ -32,16 +32,14 @@ impl vexil_runtime::Pack for CpuSnapshot {
 
 impl vexil_runtime::Unpack for CpuSnapshot {
     fn unpack(r: &mut vexil_runtime::BitReader<'_>) -> Result<Self, vexil_runtime::DecodeError> {
-        let overall_raw = r.read_leb128(10_u8)?;
-        let overall: u8 = overall_raw as u8;
+        let overall = r.read_u8()?;
         let per_core_len = r.read_leb128(10_u8)? as usize;
         let mut per_core = Vec::with_capacity(per_core_len);
         for _ in 0..per_core_len {
             let per_core_item = r.read_u8()?;
             per_core.push(per_core_item);
         }
-        let frequency_raw = r.read_leb128(10_u8)?;
-        let frequency: u16 = frequency_raw as u16;
+        let frequency = r.read_u16()?;
         r.flush_to_byte_boundary();
         let _unknown = r.read_remaining();
         Ok(Self {
@@ -50,87 +48,6 @@ impl vexil_runtime::Unpack for CpuSnapshot {
             frequency,
             _unknown,
         })
-    }
-}
-
-pub struct CpuSnapshotEncoder {
-    prev_overall: u8,
-    prev_frequency: u16,
-}
-
-impl CpuSnapshotEncoder {
-    pub fn new() -> Self {
-        Self {
-            prev_overall: 0,
-            prev_frequency: 0,
-        }
-    }
-
-    pub fn pack(&mut self, val: &CpuSnapshot, w: &mut vexil_runtime::BitWriter) -> Result<(), vexil_runtime::EncodeError> {
-        let delta_overall = val.overall.wrapping_sub(self.prev_overall);
-        w.write_leb128(delta_overall as u64);
-        self.prev_overall = val.overall;
-        w.write_leb128(val.per_core.len() as u64);
-        for item in &val.per_core {
-            w.write_u8(*item);
-        }
-        let delta_frequency = val.frequency.wrapping_sub(self.prev_frequency);
-        w.write_leb128(delta_frequency as u64);
-        self.prev_frequency = val.frequency;
-        w.flush_to_byte_boundary();
-        if !val._unknown.is_empty() {
-            w.write_raw_bytes(&val._unknown);
-        }
-        Ok(())
-    }
-
-    pub fn reset(&mut self) {
-        self.prev_overall = 0;
-        self.prev_frequency = 0;
-    }
-}
-
-pub struct CpuSnapshotDecoder {
-    prev_overall: u8,
-    prev_frequency: u16,
-}
-
-impl CpuSnapshotDecoder {
-    pub fn new() -> Self {
-        Self {
-            prev_overall: 0,
-            prev_frequency: 0,
-        }
-    }
-
-    pub fn unpack(&mut self, r: &mut vexil_runtime::BitReader<'_>) -> Result<CpuSnapshot, vexil_runtime::DecodeError> {
-        let delta_overall_raw = r.read_leb128(10_u8)?;
-        let delta_overall: u8 = delta_overall_raw as u8;
-        let overall = self.prev_overall.wrapping_add(delta_overall);
-        self.prev_overall = overall;
-        let per_core_len = r.read_leb128(10_u8)? as usize;
-        let mut per_core = Vec::with_capacity(per_core_len);
-        for _ in 0..per_core_len {
-            let per_core_item = r.read_u8()?;
-            per_core.push(per_core_item);
-        }
-        let delta_frequency_raw = r.read_leb128(10_u8)?;
-        let delta_frequency: u16 = delta_frequency_raw as u16;
-        let frequency = self.prev_frequency.wrapping_add(delta_frequency);
-        self.prev_frequency = frequency;
-        r.flush_to_byte_boundary();
-        let _unknown = r.read_remaining();
-        Ok(CpuSnapshot {
-            overall,
-            per_core,
-            frequency,
-            _unknown,
-        })
-    }
-
-    pub fn reset(&mut self) {
-        self.prev_overall = 0;
-        self.prev_frequency = 0;
     }
 }
 
@@ -148,11 +65,11 @@ pub struct MemorySnapshot {
 
 impl vexil_runtime::Pack for MemorySnapshot {
     fn pack(&self, w: &mut vexil_runtime::BitWriter) -> Result<(), vexil_runtime::EncodeError> {
-        w.write_leb128(self.used_bytes as u64);
-        w.write_leb128(self.total_bytes as u64);
-        w.write_leb128(self.swap_used as u64);
-        w.write_leb128(self.swap_total as u64);
-        w.write_leb128(self.cached_bytes as u64);
+        w.write_u64(self.used_bytes);
+        w.write_u64(self.total_bytes);
+        w.write_u64(self.swap_used);
+        w.write_u64(self.swap_total);
+        w.write_u64(self.cached_bytes);
         w.flush_to_byte_boundary();
         if !self._unknown.is_empty() {
             w.write_raw_bytes(&self._unknown);
@@ -163,16 +80,11 @@ impl vexil_runtime::Pack for MemorySnapshot {
 
 impl vexil_runtime::Unpack for MemorySnapshot {
     fn unpack(r: &mut vexil_runtime::BitReader<'_>) -> Result<Self, vexil_runtime::DecodeError> {
-        let used_bytes_raw = r.read_leb128(10_u8)?;
-        let used_bytes: u64 = used_bytes_raw as u64;
-        let total_bytes_raw = r.read_leb128(10_u8)?;
-        let total_bytes: u64 = total_bytes_raw as u64;
-        let swap_used_raw = r.read_leb128(10_u8)?;
-        let swap_used: u64 = swap_used_raw as u64;
-        let swap_total_raw = r.read_leb128(10_u8)?;
-        let swap_total: u64 = swap_total_raw as u64;
-        let cached_bytes_raw = r.read_leb128(10_u8)?;
-        let cached_bytes: u64 = cached_bytes_raw as u64;
+        let used_bytes = r.read_u64()?;
+        let total_bytes = r.read_u64()?;
+        let swap_used = r.read_u64()?;
+        let swap_total = r.read_u64()?;
+        let cached_bytes = r.read_u64()?;
         r.flush_to_byte_boundary();
         let _unknown = r.read_remaining();
         Ok(Self {
@@ -183,118 +95,6 @@ impl vexil_runtime::Unpack for MemorySnapshot {
             cached_bytes,
             _unknown,
         })
-    }
-}
-
-pub struct MemorySnapshotEncoder {
-    prev_used_bytes: u64,
-    prev_total_bytes: u64,
-    prev_swap_used: u64,
-    prev_swap_total: u64,
-    prev_cached_bytes: u64,
-}
-
-impl MemorySnapshotEncoder {
-    pub fn new() -> Self {
-        Self {
-            prev_used_bytes: 0,
-            prev_total_bytes: 0,
-            prev_swap_used: 0,
-            prev_swap_total: 0,
-            prev_cached_bytes: 0,
-        }
-    }
-
-    pub fn pack(&mut self, val: &MemorySnapshot, w: &mut vexil_runtime::BitWriter) -> Result<(), vexil_runtime::EncodeError> {
-        let delta_used_bytes = val.used_bytes.wrapping_sub(self.prev_used_bytes);
-        w.write_leb128(delta_used_bytes as u64);
-        self.prev_used_bytes = val.used_bytes;
-        let delta_total_bytes = val.total_bytes.wrapping_sub(self.prev_total_bytes);
-        w.write_leb128(delta_total_bytes as u64);
-        self.prev_total_bytes = val.total_bytes;
-        let delta_swap_used = val.swap_used.wrapping_sub(self.prev_swap_used);
-        w.write_leb128(delta_swap_used as u64);
-        self.prev_swap_used = val.swap_used;
-        let delta_swap_total = val.swap_total.wrapping_sub(self.prev_swap_total);
-        w.write_leb128(delta_swap_total as u64);
-        self.prev_swap_total = val.swap_total;
-        let delta_cached_bytes = val.cached_bytes.wrapping_sub(self.prev_cached_bytes);
-        w.write_leb128(delta_cached_bytes as u64);
-        self.prev_cached_bytes = val.cached_bytes;
-        w.flush_to_byte_boundary();
-        if !val._unknown.is_empty() {
-            w.write_raw_bytes(&val._unknown);
-        }
-        Ok(())
-    }
-
-    pub fn reset(&mut self) {
-        self.prev_used_bytes = 0;
-        self.prev_total_bytes = 0;
-        self.prev_swap_used = 0;
-        self.prev_swap_total = 0;
-        self.prev_cached_bytes = 0;
-    }
-}
-
-pub struct MemorySnapshotDecoder {
-    prev_used_bytes: u64,
-    prev_total_bytes: u64,
-    prev_swap_used: u64,
-    prev_swap_total: u64,
-    prev_cached_bytes: u64,
-}
-
-impl MemorySnapshotDecoder {
-    pub fn new() -> Self {
-        Self {
-            prev_used_bytes: 0,
-            prev_total_bytes: 0,
-            prev_swap_used: 0,
-            prev_swap_total: 0,
-            prev_cached_bytes: 0,
-        }
-    }
-
-    pub fn unpack(&mut self, r: &mut vexil_runtime::BitReader<'_>) -> Result<MemorySnapshot, vexil_runtime::DecodeError> {
-        let delta_used_bytes_raw = r.read_leb128(10_u8)?;
-        let delta_used_bytes: u64 = delta_used_bytes_raw as u64;
-        let used_bytes = self.prev_used_bytes.wrapping_add(delta_used_bytes);
-        self.prev_used_bytes = used_bytes;
-        let delta_total_bytes_raw = r.read_leb128(10_u8)?;
-        let delta_total_bytes: u64 = delta_total_bytes_raw as u64;
-        let total_bytes = self.prev_total_bytes.wrapping_add(delta_total_bytes);
-        self.prev_total_bytes = total_bytes;
-        let delta_swap_used_raw = r.read_leb128(10_u8)?;
-        let delta_swap_used: u64 = delta_swap_used_raw as u64;
-        let swap_used = self.prev_swap_used.wrapping_add(delta_swap_used);
-        self.prev_swap_used = swap_used;
-        let delta_swap_total_raw = r.read_leb128(10_u8)?;
-        let delta_swap_total: u64 = delta_swap_total_raw as u64;
-        let swap_total = self.prev_swap_total.wrapping_add(delta_swap_total);
-        self.prev_swap_total = swap_total;
-        let delta_cached_bytes_raw = r.read_leb128(10_u8)?;
-        let delta_cached_bytes: u64 = delta_cached_bytes_raw as u64;
-        let cached_bytes = self.prev_cached_bytes.wrapping_add(delta_cached_bytes);
-        self.prev_cached_bytes = cached_bytes;
-        r.flush_to_byte_boundary();
-        let _unknown = r.read_remaining();
-        Ok(MemorySnapshot {
-            used_bytes,
-            total_bytes,
-            swap_used,
-            swap_total,
-            cached_bytes,
-            _unknown,
-        })
-    }
-
-    pub fn reset(&mut self) {
-        self.prev_used_bytes = 0;
-        self.prev_total_bytes = 0;
-        self.prev_swap_used = 0;
-        self.prev_swap_total = 0;
-        self.prev_cached_bytes = 0;
     }
 }
 

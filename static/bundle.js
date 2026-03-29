@@ -639,26 +639,26 @@ var SchemaHandshake = class _SchemaHandshake {
 };
 
 // frontend/generated.ts
-var SCHEMA_HASH = new Uint8Array([135, 231, 108, 11, 194, 9, 3, 11, 12, 47, 11, 217, 31, 43, 29, 242, 48, 205, 120, 86, 13, 72, 173, 148, 146, 238, 178, 70, 50, 51, 148, 39]);
+var SCHEMA_HASH = new Uint8Array([17, 4, 15, 108, 27, 72, 82, 44, 66, 248, 132, 117, 159, 216, 238, 103, 252, 236, 160, 128, 231, 120, 195, 142, 190, 147, 117, 235, 56, 82, 62, 190]);
 function decodeCpuSnapshot(r) {
-  const overall = r.readLeb128();
+  const overall = r.readU8();
   const per_core_len = r.readLeb128();
   const per_core = [];
   for (let i = 0; i < per_core_len; i++) {
     const per_core_item = r.readU8();
     per_core.push(per_core_item);
   }
-  const frequency = r.readLeb128();
+  const frequency = r.readU16();
   r.flushToByteBoundary();
   const _unknown = r.readRemaining();
   return { overall, per_core, frequency, _unknown };
 }
 function decodeMemorySnapshot(r) {
-  const used_bytes = r.readLeb12864();
-  const total_bytes = r.readLeb12864();
-  const swap_used = r.readLeb12864();
-  const swap_total = r.readLeb12864();
-  const cached_bytes = r.readLeb12864();
+  const used_bytes = r.readU64();
+  const total_bytes = r.readU64();
+  const swap_used = r.readU64();
+  const swap_total = r.readU64();
+  const cached_bytes = r.readU64();
   r.flushToByteBoundary();
   const _unknown = r.readRemaining();
   return { used_bytes, total_bytes, swap_used, swap_total, cached_bytes, _unknown };

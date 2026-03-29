@@ -3,7 +3,7 @@
 
 import { BitReader, BitWriter } from '@vexil-lang/runtime';
 
-export const SCHEMA_HASH = new Uint8Array([0x87, 0xe7, 0x6c, 0x0b, 0xc2, 0x09, 0x03, 0x0b, 0x0c, 0x2f, 0x0b, 0xd9, 0x1f, 0x2b, 0x1d, 0xf2, 0x30, 0xcd, 0x78, 0x56, 0x0d, 0x48, 0xad, 0x94, 0x92, 0xee, 0xb2, 0x46, 0x32, 0x33, 0x94, 0x27]);
+export const SCHEMA_HASH = new Uint8Array([0x11, 0x04, 0x0f, 0x6c, 0x1b, 0x48, 0x52, 0x2c, 0x42, 0xf8, 0x84, 0x75, 0x9f, 0xd8, 0xee, 0x67, 0xfc, 0xec, 0xa0, 0x80, 0xe7, 0x78, 0xc3, 0x8e, 0xbe, 0x93, 0x75, 0xeb, 0x38, 0x52, 0x3e, 0xbe]);
 
 // ── CpuSnapshot ──
 export interface CpuSnapshot {
@@ -14,12 +14,12 @@ export interface CpuSnapshot {
 }
 
 export function encodeCpuSnapshot(v: CpuSnapshot, w: BitWriter): void {
-  w.writeLeb128(v.overall);
+  w.writeU8(v.overall);
   w.writeLeb128(v.per_core.length);
   for (const item of v.per_core) {
     w.writeU8(item);
   }
-  w.writeLeb128(v.frequency);
+  w.writeU16(v.frequency);
   w.flushToByteBoundary();
   if (v._unknown.length > 0) {
     w.writeRawBytes(v._unknown);
@@ -27,72 +27,17 @@ export function encodeCpuSnapshot(v: CpuSnapshot, w: BitWriter): void {
 }
 
 export function decodeCpuSnapshot(r: BitReader): CpuSnapshot {
-  const overall = r.readLeb128();
+  const overall = r.readU8();
   const per_core_len = r.readLeb128();
   const per_core: number[] = [];
   for (let i = 0; i < per_core_len; i++) {
     const per_core_item = r.readU8();
     per_core.push(per_core_item);
   }
-  const frequency = r.readLeb128();
+  const frequency = r.readU16();
   r.flushToByteBoundary();
   const _unknown = r.readRemaining();
   return { overall, per_core, frequency, _unknown };
-}
-
-export class CpuSnapshotEncoder {
-  private prevoverall: number = 0;
-  private prevfrequency: number = 0;
-
-  encode(v: CpuSnapshot, w: BitWriter): void {
-    const delta_overall = (v.overall - this.prevoverall) & 0xFF;
-    w.writeLeb128(delta_overall);
-    this.prevoverall = v.overall;
-    w.writeLeb128(v.per_core.length);
-    for (const item of v.per_core) {
-      w.writeU8(item);
-    }
-    const delta_frequency = (v.frequency - this.prevfrequency) & 0xFFFF;
-    w.writeLeb128(delta_frequency);
-    this.prevfrequency = v.frequency;
-    w.flushToByteBoundary();
-    if (v._unknown.length > 0) {
-      w.writeRawBytes(v._unknown);
-    }
-  }
-
-  reset(): void {
-    this.prevoverall = 0;
-    this.prevfrequency = 0;
-  }
-}
-
-export class CpuSnapshotDecoder {
-  private prevoverall: number = 0;
-  private prevfrequency: number = 0;
-
-  decode(r: BitReader): CpuSnapshot {
-    const delta_overall = r.readLeb128();
-    const overall = (this.prevoverall + delta_overall) & 0xFF;
-    this.prevoverall = overall;
-    const per_core_len = r.readLeb128();
-    const per_core: number[] = [];
-    for (let i = 0; i < per_core_len; i++) {
-      const per_core_item = r.readU8();
-      per_core.push(per_core_item);
-    }
-    const delta_frequency = r.readLeb128();
-    const frequency = (this.prevfrequency + delta_frequency) & 0xFFFF;
-    this.prevfrequency = frequency;
-    r.flushToByteBoundary();
-    const _unknown = r.readRemaining();
-    return { overall, per_core, frequency, _unknown };
-  }
-
-  reset(): void {
-    this.prevoverall = 0;
-    this.prevfrequency = 0;
-  }
 }
 
 
@@ -107,11 +52,11 @@ export interface MemorySnapshot {
 }
 
 export function encodeMemorySnapshot(v: MemorySnapshot, w: BitWriter): void {
-  w.writeLeb12864(v.used_bytes);
-  w.writeLeb12864(v.total_bytes);
-  w.writeLeb12864(v.swap_used);
-  w.writeLeb12864(v.swap_total);
-  w.writeLeb12864(v.cached_bytes);
+  w.writeU64(v.used_bytes);
+  w.writeU64(v.total_bytes);
+  w.writeU64(v.swap_used);
+  w.writeU64(v.swap_total);
+  w.writeU64(v.cached_bytes);
   w.flushToByteBoundary();
   if (v._unknown.length > 0) {
     w.writeRawBytes(v._unknown);
@@ -119,89 +64,14 @@ export function encodeMemorySnapshot(v: MemorySnapshot, w: BitWriter): void {
 }
 
 export function decodeMemorySnapshot(r: BitReader): MemorySnapshot {
-  const used_bytes = r.readLeb12864();
-  const total_bytes = r.readLeb12864();
-  const swap_used = r.readLeb12864();
-  const swap_total = r.readLeb12864();
-  const cached_bytes = r.readLeb12864();
+  const used_bytes = r.readU64();
+  const total_bytes = r.readU64();
+  const swap_used = r.readU64();
+  const swap_total = r.readU64();
+  const cached_bytes = r.readU64();
   r.flushToByteBoundary();
   const _unknown = r.readRemaining();
   return { used_bytes, total_bytes, swap_used, swap_total, cached_bytes, _unknown };
-}
-
-export class MemorySnapshotEncoder {
-  private prevusedBytes: bigint = 0n;
-  private prevtotalBytes: bigint = 0n;
-  private prevswapUsed: bigint = 0n;
-  private prevswapTotal: bigint = 0n;
-  private prevcachedBytes: bigint = 0n;
-
-  encode(v: MemorySnapshot, w: BitWriter): void {
-    const delta_used_bytes = BigInt.asUintN(64, v.used_bytes - this.prevusedBytes);
-    w.writeLeb12864(delta_used_bytes);
-    this.prevusedBytes = v.used_bytes;
-    const delta_total_bytes = BigInt.asUintN(64, v.total_bytes - this.prevtotalBytes);
-    w.writeLeb12864(delta_total_bytes);
-    this.prevtotalBytes = v.total_bytes;
-    const delta_swap_used = BigInt.asUintN(64, v.swap_used - this.prevswapUsed);
-    w.writeLeb12864(delta_swap_used);
-    this.prevswapUsed = v.swap_used;
-    const delta_swap_total = BigInt.asUintN(64, v.swap_total - this.prevswapTotal);
-    w.writeLeb12864(delta_swap_total);
-    this.prevswapTotal = v.swap_total;
-    const delta_cached_bytes = BigInt.asUintN(64, v.cached_bytes - this.prevcachedBytes);
-    w.writeLeb12864(delta_cached_bytes);
-    this.prevcachedBytes = v.cached_bytes;
-    w.flushToByteBoundary();
-    if (v._unknown.length > 0) {
-      w.writeRawBytes(v._unknown);
-    }
-  }
-
-  reset(): void {
-    this.prevusedBytes = 0n;
-    this.prevtotalBytes = 0n;
-    this.prevswapUsed = 0n;
-    this.prevswapTotal = 0n;
-    this.prevcachedBytes = 0n;
-  }
-}
-
-export class MemorySnapshotDecoder {
-  private prevusedBytes: bigint = 0n;
-  private prevtotalBytes: bigint = 0n;
-  private prevswapUsed: bigint = 0n;
-  private prevswapTotal: bigint = 0n;
-  private prevcachedBytes: bigint = 0n;
-
-  decode(r: BitReader): MemorySnapshot {
-    const delta_used_bytes = r.readLeb12864();
-    const used_bytes = BigInt.asUintN(64, this.prevusedBytes + delta_used_bytes);
-    this.prevusedBytes = used_bytes;
-    const delta_total_bytes = r.readLeb12864();
-    const total_bytes = BigInt.asUintN(64, this.prevtotalBytes + delta_total_bytes);
-    this.prevtotalBytes = total_bytes;
-    const delta_swap_used = r.readLeb12864();
-    const swap_used = BigInt.asUintN(64, this.prevswapUsed + delta_swap_used);
-    this.prevswapUsed = swap_used;
-    const delta_swap_total = r.readLeb12864();
-    const swap_total = BigInt.asUintN(64, this.prevswapTotal + delta_swap_total);
-    this.prevswapTotal = swap_total;
-    const delta_cached_bytes = r.readLeb12864();
-    const cached_bytes = BigInt.asUintN(64, this.prevcachedBytes + delta_cached_bytes);
-    this.prevcachedBytes = cached_bytes;
-    r.flushToByteBoundary();
-    const _unknown = r.readRemaining();
-    return { used_bytes, total_bytes, swap_used, swap_total, cached_bytes, _unknown };
-  }
-
-  reset(): void {
-    this.prevusedBytes = 0n;
-    this.prevtotalBytes = 0n;
-    this.prevswapUsed = 0n;
-    this.prevswapTotal = 0n;
-    this.prevcachedBytes = 0n;
-  }
 }
 
 
