@@ -146,10 +146,13 @@ async fn handle_ws(mut socket: WebSocket) {
 
 async fn send_frame(socket: &mut WebSocket, frame: &TelemetryFrame) -> Result<(), ()> {
     let mut w = BitWriter::new();
-    if frame.pack(&mut w).is_err() {
+    if let Err(e) = frame.pack(&mut w) {
+        eprintln!("[error] pack failed: {e}");
         return Err(());
     }
     let bytes = w.finish();
+    let hex: String = bytes.iter().map(|b| format!("{:02x}", b)).collect();
+    eprintln!("[frame] {} bytes: {}", bytes.len(), &hex[..hex.len().min(80)]);
     socket
         .send(Message::Binary(bytes.into()))
         .await

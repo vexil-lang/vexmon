@@ -36,7 +36,7 @@ export function decodeCpuSnapshot(r: BitReader): CpuSnapshot {
   }
   const frequency = r.readU16();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0); // skip readRemaining inside union payloads
   return { overall, per_core, frequency, _unknown };
 }
 
@@ -70,7 +70,7 @@ export function decodeMemorySnapshot(r: BitReader): MemorySnapshot {
   const swap_total = r.readU64();
   const cached_bytes = r.readU64();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0); // skip readRemaining inside union payloads
   return { used_bytes, total_bytes, swap_used, swap_total, cached_bytes, _unknown };
 }
 
@@ -107,7 +107,7 @@ export function decodeDiskInfo(r: BitReader): DiskInfo {
   const read_bps = r.readU64();
   const write_bps = r.readU64();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0); // skip readRemaining inside union payloads
   return { name, mount, total_gb, used_gb, read_bps, write_bps, _unknown };
 }
 
@@ -141,7 +141,7 @@ export function decodeNetworkInfo(r: BitReader): NetworkInfo {
   const total_rx = r.readU64();
   const total_tx = r.readU64();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0); // skip readRemaining inside union payloads
   return { name, rx_bps, tx_bps, total_rx, total_tx, _unknown };
 }
 
@@ -215,7 +215,7 @@ export function decodeProcessInfo(r: BitReader): ProcessInfo {
   const state = decodeProcessState(r);
   r.leaveNested();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0); // skip readRemaining inside union payloads
   return { pid, name, cpu_pct, mem_mb, state, _unknown };
 }
 
@@ -255,7 +255,7 @@ export function decodeSystemInfo(r: BitReader): SystemInfo {
   const cpu_brand = r.readString();
   const cpu_count = r.readU8();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0); // skip readRemaining inside union payloads
   return { hostname, os_name, os_version, kernel, uptime_secs, cpu_brand, cpu_count, _unknown };
 }
 

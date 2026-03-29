@@ -650,7 +650,7 @@ function decodeCpuSnapshot(r) {
   }
   const frequency = r.readU16();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0);
   return { overall, per_core, frequency, _unknown };
 }
 function decodeMemorySnapshot(r) {
@@ -660,7 +660,7 @@ function decodeMemorySnapshot(r) {
   const swap_total = r.readU64();
   const cached_bytes = r.readU64();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0);
   return { used_bytes, total_bytes, swap_used, swap_total, cached_bytes, _unknown };
 }
 function decodeDiskInfo(r) {
@@ -671,7 +671,7 @@ function decodeDiskInfo(r) {
   const read_bps = r.readU64();
   const write_bps = r.readU64();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0);
   return { name, mount, total_gb, used_gb, read_bps, write_bps, _unknown };
 }
 function decodeNetworkInfo(r) {
@@ -681,7 +681,7 @@ function decodeNetworkInfo(r) {
   const total_rx = r.readU64();
   const total_tx = r.readU64();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0);
   return { name, rx_bps, tx_bps, total_rx, total_tx, _unknown };
 }
 function decodeProcessState(r) {
@@ -710,7 +710,7 @@ function decodeProcessInfo(r) {
   const state = decodeProcessState(r);
   r.leaveNested();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0);
   return { pid, name, cpu_pct, mem_mb, state, _unknown };
 }
 function decodeSystemInfo(r) {
@@ -722,7 +722,7 @@ function decodeSystemInfo(r) {
   const cpu_brand = r.readString();
   const cpu_count = r.readU8();
   r.flushToByteBoundary();
-  const _unknown = r.readRemaining();
+  const _unknown = new Uint8Array(0);
   return { hostname, os_name, os_version, kernel, uptime_secs, cpu_brand, cpu_count, _unknown };
 }
 function decodeTelemetryFrame(r) {
