@@ -1,0 +1,69 @@
+namespace vexmon
+
+@delta
+message CpuSnapshot {
+    overall     @0 : u8
+    per_core    @1 : array<u8>
+    frequency   @2 : u16
+}
+
+@delta
+message MemorySnapshot {
+    used_bytes   @0 : u64
+    total_bytes  @1 : u64
+    swap_used    @2 : u64
+    swap_total   @3 : u64
+    cached_bytes @4 : u64
+}
+
+message DiskInfo {
+    name       @0 : string
+    mount      @1 : string
+    total_gb   @2 : u32
+    used_gb    @3 : u32
+    read_bps   @4 : u64
+    write_bps  @5 : u64
+}
+
+message NetworkInfo {
+    name        @0 : string
+    rx_bps      @1 : u64
+    tx_bps      @2 : u64
+    total_rx    @3 : u64
+    total_tx    @4 : u64
+}
+
+enum ProcessState {
+    Running  @0
+    Sleeping @1
+    Stopped  @2
+    Zombie   @3
+    Unknown  @4
+}
+
+message ProcessInfo {
+    pid      @0 : u32
+    name     @1 : string
+    cpu_pct  @2 : u8
+    mem_mb   @3 : u32
+    state    @4 : ProcessState
+}
+
+message SystemInfo {
+    hostname    @0 : string
+    os_name     @1 : string
+    os_version  @2 : string
+    kernel      @3 : string
+    uptime_secs @4 : u64
+    cpu_brand   @5 : string
+    cpu_count   @6 : u8
+}
+
+union TelemetryFrame {
+    Cpu       @0 { snapshot @0 : CpuSnapshot }
+    Memory    @1 { snapshot @0 : MemorySnapshot }
+    Disks     @2 { disks @0 : array<DiskInfo> }
+    Network   @3 { interfaces @0 : array<NetworkInfo> }
+    Processes @4 { top @0 : array<ProcessInfo> }
+    System    @5 { info @0 : SystemInfo }
+}

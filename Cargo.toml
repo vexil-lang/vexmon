@@ -1,0 +1,15 @@
+[package]
+name = "vexmon"
+version = "0.1.0"
+edition = "2021"
+description = "Real-time system monitor powered by Vexil bitpack wire format"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/vexil-lang/vexmon"
+keywords = ["monitoring", "vexil", "system", "telemetry"]
+categories = ["command-line-utilities", "network-programming"]
+
+[dependencies]
+vexil-runtime = "0.5"
+axum = { version = "0.8", features = ["ws"] }
+tokio = { version = "1", features = ["full"] }
+sysinfo = "0.34"

@@ -1,0 +1,5 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: system-ui, sans-serif; background: #0a0a0f; color: #e0e0e0; padding: 2rem; }
+h1 { margin-bottom: 1rem; }
+#status { color: #888; margin-bottom: 1rem; }
+#log { font-size: 0.8rem; color: #6ee7b7; white-space: pre-wrap; max-height: 80vh; overflow-y: auto; }
