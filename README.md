@@ -9,8 +9,9 @@ Monitors CPU, memory, disk, network, and processes over WebSocket using Vexil's 
 ## Quick Start
 
 ```sh
-cargo install vexmon
-vexmon
+git clone https://github.com/vexil-lang/vexmon
+cd vexmon
+cargo run --release
 # Open http://127.0.0.1:3000
 ```
 
