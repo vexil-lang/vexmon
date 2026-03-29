@@ -26,11 +26,11 @@ vexmon
 
 ```
 ┌─────────────────────┐     binary WebSocket      ┌──────────────────────┐
-│   Rust Backend      │ ─────────────────────────→ │   Browser Frontend   │
-│                     │    ~50 bytes/frame          │                      │
-│  sysinfo → Pack     │    union TelemetryFrame     │  Unpack → render     │
-│  (vexil-runtime)    │    schema handshake         │  (@vexil-lang/runtime)│
-└─────────────────────┘                            └──────────────────────┘
+│   Rust Backend      │ ─────────────────────────→│  Browser Frontend    │
+│                     │    ~50 bytes/frame        │                      │
+│  sysinfo → Pack     │    union TelemetryFrame   │ Unpack → render      │
+│  (vexil-runtime)    │    schema handshake       │ (@vexil-lang/runtime)│
+└─────────────────────┘                           └──────────────────────┘
 ```
 
 **Backend** (Rust + axum):
