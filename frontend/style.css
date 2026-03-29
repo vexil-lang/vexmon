@@ -203,6 +203,59 @@ body {
 .footer a { color: var(--accent-green); text-decoration: none; }
 .footer a:hover { text-decoration: underline; }
 
+/* Process controls */
+.proc-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.proc-search {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  padding: 0.35rem 0.6rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text);
+  outline: none;
+  width: 220px;
+}
+.proc-search:focus {
+  border-color: var(--accent-green);
+  background: rgba(52,211,153,0.05);
+}
+.proc-search::placeholder { color: var(--text-dim); }
+
+.proc-showing {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  color: var(--text-dim);
+}
+
+.proc-count {
+  font-weight: 400;
+  font-size: 0.6rem;
+  color: var(--text-dim);
+}
+
+.proc-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.proc-scroll::-webkit-scrollbar { width: 6px; }
+.proc-scroll::-webkit-scrollbar-track { background: transparent; }
+.proc-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+.proc-scroll::-webkit-scrollbar-thumb:hover { background: var(--accent-green); }
+
+.dt th.sortable { cursor: pointer; user-select: none; }
+.dt th.sortable:hover { color: var(--accent-green); }
+.dt th.sortable.asc::after { content: ' ↑'; color: var(--accent-green); }
+.dt th.sortable.desc::after { content: ' ↓'; color: var(--accent-green); }
+
 @media (max-width: 768px) {
   .grid { grid-template-columns: 1fr; }
   .header { flex-direction: column; gap: 0.4rem; }

@@ -942,11 +942,54 @@ function renderNetwork(frame, bytes) {
     box.appendChild(empty);
   }
 }
+var lastProcesses = [];
+var procSortCol = "cpu";
+var procSortDir = "desc";
 function renderProcesses(frame, bytes) {
   $("proc-bytes").textContent = String(bytes);
+  lastProcesses = frame.top;
+  $("proc-count").textContent = `(${frame.top.length})`;
+  renderProcessTable();
+}
+function renderProcessTable() {
+  const search = $("proc-search").value.toLowerCase();
+  let procs = lastProcesses;
+  if (search) {
+    procs = procs.filter(
+      (p) => p.name.toLowerCase().includes(search) || String(p.pid).includes(search)
+    );
+  }
+  procs = [...procs].sort((a, b) => {
+    let av, bv;
+    switch (procSortCol) {
+      case "pid":
+        av = a.pid;
+        bv = b.pid;
+        break;
+      case "name":
+        av = a.name.toLowerCase();
+        bv = b.name.toLowerCase();
+        break;
+      case "cpu":
+        av = a.cpu_pct;
+        bv = b.cpu_pct;
+        break;
+      case "mem":
+        av = a.mem_mb;
+        bv = b.mem_mb;
+        break;
+      default:
+        av = a.cpu_pct;
+        bv = b.cpu_pct;
+    }
+    if (av < bv) return procSortDir === "asc" ? -1 : 1;
+    if (av > bv) return procSortDir === "asc" ? 1 : -1;
+    return 0;
+  });
+  $("proc-showing").textContent = search ? `showing ${procs.length} of ${lastProcesses.length}` : `${procs.length} processes`;
   const tbody = $("procs");
   tbody.textContent = "";
-  for (const p of frame.top) {
+  for (const p of procs) {
     const tr = document.createElement("tr");
     const tdPid = document.createElement("td");
     tdPid.className = "dm";
@@ -973,6 +1016,28 @@ function renderProcesses(frame, bytes) {
     tbody.appendChild(tr);
   }
 }
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = $("proc-search");
+  if (searchInput) {
+    searchInput.addEventListener("input", renderProcessTable);
+  }
+  document.querySelectorAll(".sortable").forEach((th) => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.col;
+      if (procSortCol === col) {
+        procSortDir = procSortDir === "desc" ? "asc" : "desc";
+      } else {
+        procSortCol = col;
+        procSortDir = col === "name" ? "asc" : "desc";
+      }
+      document.querySelectorAll(".sortable").forEach((h) => {
+        h.classList.remove("asc", "desc");
+      });
+      th.classList.add(procSortDir);
+      renderProcessTable();
+    });
+  });
+});
 function renderSystem(frame) {
   const i = frame.info;
   $("sys-host").textContent = i.hostname;

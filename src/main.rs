@@ -90,8 +90,12 @@ async fn handle_ws(mut socket: WebSocket) {
 
     // Send system info once
     let sysinfo = collectors::system::collect(&sys);
+    // Send all data immediately on connect
     let frame = TelemetryFrame::System { info: sysinfo };
     if send_frame(&mut socket, &frame).await.is_err() {
+        return;
+    }
+    if send_all(&mut socket, &sys, &mut disks, &mut networks).await.is_err() {
         return;
     }
 
@@ -135,7 +139,7 @@ async fn handle_ws(mut socket: WebSocket) {
                 break;
             }
 
-            let procs = collectors::process::collect(&sys, 15);
+            let procs = collectors::process::collect(&sys, 50);
             let proc_frame = TelemetryFrame::Processes { top: procs };
             if send_frame(&mut socket, &proc_frame).await.is_err() {
                 break;
@@ -144,15 +148,38 @@ async fn handle_ws(mut socket: WebSocket) {
     }
 }
 
+async fn send_all(
+    socket: &mut WebSocket,
+    sys: &System,
+    disks: &mut Disks,
+    networks: &mut Networks,
+) -> Result<(), ()> {
+    let cpu = collectors::cpu::collect(sys);
+    send_frame(socket, &TelemetryFrame::Cpu { snapshot: cpu }).await?;
+
+    let mem = collectors::memory::collect(sys);
+    send_frame(socket, &TelemetryFrame::Memory { snapshot: mem }).await?;
+
+    networks.refresh(false);
+    let nets = collectors::network::collect(networks);
+    send_frame(socket, &TelemetryFrame::Network { interfaces: nets }).await?;
+
+    disks.refresh(false);
+    let disk_list = collectors::disk::collect(disks);
+    send_frame(socket, &TelemetryFrame::Disks { disks: disk_list }).await?;
+
+    let procs = collectors::process::collect(sys, 50);
+    send_frame(socket, &TelemetryFrame::Processes { top: procs }).await?;
+
+    Ok(())
+}
+
 async fn send_frame(socket: &mut WebSocket, frame: &TelemetryFrame) -> Result<(), ()> {
     let mut w = BitWriter::new();
-    if let Err(e) = frame.pack(&mut w) {
-        eprintln!("[error] pack failed: {e}");
+    if frame.pack(&mut w).is_err() {
         return Err(());
     }
     let bytes = w.finish();
-    let hex: String = bytes.iter().map(|b| format!("{:02x}", b)).collect();
-    eprintln!("[frame] {} bytes: {}", bytes.len(), &hex[..hex.len().min(80)]);
     socket
         .send(Message::Binary(bytes.into()))
         .await

@@ -79,21 +79,27 @@
   <!-- Processes -->
   <div class="panel full">
     <div class="ph">
-      <span class="t">Processes</span>
+      <span class="t">Processes <span class="proc-count" id="proc-count"></span></span>
       <span class="b"><em id="proc-bytes">--</em> bytes</span>
     </div>
-    <table class="dt">
-      <thead>
-        <tr>
-          <th>PID</th>
-          <th>Name</th>
-          <th class="n">CPU</th>
-          <th class="n">Memory</th>
-          <th>State</th>
-        </tr>
-      </thead>
-      <tbody id="procs"></tbody>
-    </table>
+    <div class="proc-controls">
+      <input type="text" id="proc-search" class="proc-search" placeholder="Filter processes..." autocomplete="off" spellcheck="false">
+      <span class="proc-showing" id="proc-showing"></span>
+    </div>
+    <div class="proc-scroll">
+      <table class="dt">
+        <thead>
+          <tr>
+            <th class="sortable" data-col="pid">PID</th>
+            <th class="sortable" data-col="name">Name</th>
+            <th class="sortable n" data-col="cpu">CPU</th>
+            <th class="sortable n" data-col="mem">Memory</th>
+            <th>State</th>
+          </tr>
+        </thead>
+        <tbody id="procs"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
