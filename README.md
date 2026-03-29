@@ -1,6 +1,8 @@
 # vexmon
 
-Real-time system monitor powered by [Vexil](https://github.com/vexil-lang/vexil) — a typed schema language with sub-byte wire encoding.
+> **Showcase project** — demonstrates the [Vexil](https://github.com/vexil-lang/vexil) wire format in a real application. This is an example, not a maintained product. Use it as a reference for building your own Vexil-powered apps.
+
+Real-time system monitor powered by Vexil — a typed schema language with sub-byte wire encoding.
 
 Monitors CPU, memory, disk, network, and processes over WebSocket using Vexil's compact binary format. Typically **~300 bytes/second** for full system telemetry — 90%+ smaller than equivalent JSON.
 
