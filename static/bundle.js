@@ -808,6 +808,8 @@ function decodeTelemetryFrame(r) {
 // frontend/app.ts
 var totalBytes = 0;
 var lastSecondBytes = 0;
+var bpsHistory = [];
+var BPS_WINDOW = 5;
 var $ = (id) => document.getElementById(id);
 function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
@@ -1100,11 +1102,13 @@ function connect() {
   ws.onerror = () => ws.close();
 }
 setInterval(() => {
-  const bps = lastSecondBytes;
-  const jsonEstimate = bps * 12;
-  $("wire-bps").textContent = String(bps);
+  bpsHistory.push(lastSecondBytes);
+  if (bpsHistory.length > BPS_WINDOW) bpsHistory.shift();
+  const avgBps = Math.round(bpsHistory.reduce((a, b) => a + b, 0) / bpsHistory.length);
+  const jsonEstimate = avgBps * 12;
+  $("wire-bps").textContent = String(avgBps);
   $("json-equiv").textContent = `~${jsonEstimate}`;
-  $("savings").textContent = jsonEstimate > 0 ? `${((1 - bps / jsonEstimate) * 100).toFixed(0)}%` : "--";
+  $("savings").textContent = jsonEstimate > 0 ? `${((1 - avgBps / jsonEstimate) * 100).toFixed(0)}%` : "--";
   lastSecondBytes = 0;
 }, 1e3);
 connect();

@@ -4,6 +4,8 @@ import { SCHEMA_HASH, decodeTelemetryFrame, type TelemetryFrame } from './genera
 // State
 let totalBytes = 0;
 let lastSecondBytes = 0;
+const bpsHistory: number[] = [];
+const BPS_WINDOW = 5; // 5-second rolling average
 
 const $ = (id: string) => document.getElementById(id)!;
 
@@ -326,13 +328,15 @@ function connect() {
   ws.onerror = () => ws.close();
 }
 
-// BPS tracker
+// BPS tracker — 5-second rolling average for smooth display
 setInterval(() => {
-  const bps = lastSecondBytes;
-  const jsonEstimate = bps * 12;
-  $('wire-bps').textContent = String(bps);
+  bpsHistory.push(lastSecondBytes);
+  if (bpsHistory.length > BPS_WINDOW) bpsHistory.shift();
+  const avgBps = Math.round(bpsHistory.reduce((a, b) => a + b, 0) / bpsHistory.length);
+  const jsonEstimate = avgBps * 12;
+  $('wire-bps').textContent = String(avgBps);
   $('json-equiv').textContent = `~${jsonEstimate}`;
-  $('savings').textContent = jsonEstimate > 0 ? `${((1 - bps / jsonEstimate) * 100).toFixed(0)}%` : '--';
+  $('savings').textContent = jsonEstimate > 0 ? `${((1 - avgBps / jsonEstimate) * 100).toFixed(0)}%` : '--';
   lastSecondBytes = 0;
 }, 1000);
 
