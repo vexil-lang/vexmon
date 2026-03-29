@@ -59,17 +59,8 @@ async fn ws_handler(ws: WebSocketUpgrade) -> impl axum::response::IntoResponse {
 }
 
 async fn handle_ws(mut socket: WebSocket) {
-    // Schema handshake: wait for client to send its handshake, then verify
+    // Wait for client's schema handshake first
     let local = SchemaHandshake::new(SCHEMA_HASH, "0.1.0");
-    // Send our handshake first so the client can verify too
-    let hs_bytes = local.encode();
-    if socket
-        .send(Message::Binary(hs_bytes.into()))
-        .await
-        .is_err()
-    {
-        return;
-    }
 
     let remote = loop {
         match socket.recv().await {
