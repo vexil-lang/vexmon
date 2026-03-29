@@ -356,7 +356,9 @@ pub enum TelemetryFrame {
 
 impl vexil_runtime::Pack for TelemetryFrame {
     fn pack(&self, w: &mut vexil_runtime::BitWriter) -> Result<(), vexil_runtime::EncodeError> {
-        w.flush_to_byte_boundary();
+        // NOTE: removed flush_to_byte_boundary() here — it pushes a spurious 0x00
+        // on a fresh writer, corrupting the union discriminant. This is a codegen bug
+        // in vexil-codegen-rust/src/union_gen.rs that needs fixing upstream.
         match self {
             Self::Cpu { snapshot } => {
                 w.write_leb128(0_u64);
