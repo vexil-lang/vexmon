@@ -223,17 +223,10 @@ function renderProcessTable() {
     tdMem.className = 'n';
     tdMem.textContent = p.mem_mb + ' MB';
 
-    const tdState = document.createElement('td');
-    const badge = document.createElement('span');
-    badge.className = 'st st-' + p.state;
-    badge.textContent = p.state;
-    tdState.appendChild(badge);
-
     tr.appendChild(tdPid);
     tr.appendChild(tdName);
     tr.appendChild(tdCpu);
     tr.appendChild(tdMem);
-    tr.appendChild(tdState);
     tbody.appendChild(tr);
   }
 }
