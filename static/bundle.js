@@ -640,18 +640,6 @@ var SchemaHandshake = class _SchemaHandshake {
 
 // frontend/generated.ts
 var SCHEMA_HASH = new Uint8Array([135, 231, 108, 11, 194, 9, 3, 11, 12, 47, 11, 217, 31, 43, 29, 242, 48, 205, 120, 86, 13, 72, 173, 148, 146, 238, 178, 70, 50, 51, 148, 39]);
-function encodeCpuSnapshot(v, w) {
-  w.writeLeb128(v.overall);
-  w.writeLeb128(v.per_core.length);
-  for (const item of v.per_core) {
-    w.writeU8(item);
-  }
-  w.writeLeb128(v.frequency);
-  w.flushToByteBoundary();
-  if (v._unknown.length > 0) {
-    w.writeRawBytes(v._unknown);
-  }
-}
 function decodeCpuSnapshot(r) {
   const overall = r.readLeb128();
   const per_core_len = r.readLeb128();
@@ -665,66 +653,6 @@ function decodeCpuSnapshot(r) {
   const _unknown = r.readRemaining();
   return { overall, per_core, frequency, _unknown };
 }
-var CpuSnapshotEncoder = class {
-  prevoverall = 0;
-  prevfrequency = 0;
-  encode(v, w) {
-    const delta_overall = v.overall - this.prevoverall & 255;
-    w.writeLeb128(delta_overall);
-    this.prevoverall = v.overall;
-    w.writeLeb128(v.per_core.length);
-    for (const item of v.per_core) {
-      w.writeU8(item);
-    }
-    const delta_frequency = v.frequency - this.prevfrequency & 65535;
-    w.writeLeb128(delta_frequency);
-    this.prevfrequency = v.frequency;
-    w.flushToByteBoundary();
-    if (v._unknown.length > 0) {
-      w.writeRawBytes(v._unknown);
-    }
-  }
-  reset() {
-    this.prevoverall = 0;
-    this.prevfrequency = 0;
-  }
-};
-var CpuSnapshotDecoder = class {
-  prevoverall = 0;
-  prevfrequency = 0;
-  decode(r) {
-    const delta_overall = r.readLeb128();
-    const overall = this.prevoverall + delta_overall & 255;
-    this.prevoverall = overall;
-    const per_core_len = r.readLeb128();
-    const per_core = [];
-    for (let i = 0; i < per_core_len; i++) {
-      const per_core_item = r.readU8();
-      per_core.push(per_core_item);
-    }
-    const delta_frequency = r.readLeb128();
-    const frequency = this.prevfrequency + delta_frequency & 65535;
-    this.prevfrequency = frequency;
-    r.flushToByteBoundary();
-    const _unknown = r.readRemaining();
-    return { overall, per_core, frequency, _unknown };
-  }
-  reset() {
-    this.prevoverall = 0;
-    this.prevfrequency = 0;
-  }
-};
-function encodeMemorySnapshot(v, w) {
-  w.writeLeb12864(v.used_bytes);
-  w.writeLeb12864(v.total_bytes);
-  w.writeLeb12864(v.swap_used);
-  w.writeLeb12864(v.swap_total);
-  w.writeLeb12864(v.cached_bytes);
-  w.flushToByteBoundary();
-  if (v._unknown.length > 0) {
-    w.writeRawBytes(v._unknown);
-  }
-}
 function decodeMemorySnapshot(r) {
   const used_bytes = r.readLeb12864();
   const total_bytes = r.readLeb12864();
@@ -734,87 +662,6 @@ function decodeMemorySnapshot(r) {
   r.flushToByteBoundary();
   const _unknown = r.readRemaining();
   return { used_bytes, total_bytes, swap_used, swap_total, cached_bytes, _unknown };
-}
-var MemorySnapshotEncoder = class {
-  prevusedBytes = 0n;
-  prevtotalBytes = 0n;
-  prevswapUsed = 0n;
-  prevswapTotal = 0n;
-  prevcachedBytes = 0n;
-  encode(v, w) {
-    const delta_used_bytes = BigInt.asUintN(64, v.used_bytes - this.prevusedBytes);
-    w.writeLeb12864(delta_used_bytes);
-    this.prevusedBytes = v.used_bytes;
-    const delta_total_bytes = BigInt.asUintN(64, v.total_bytes - this.prevtotalBytes);
-    w.writeLeb12864(delta_total_bytes);
-    this.prevtotalBytes = v.total_bytes;
-    const delta_swap_used = BigInt.asUintN(64, v.swap_used - this.prevswapUsed);
-    w.writeLeb12864(delta_swap_used);
-    this.prevswapUsed = v.swap_used;
-    const delta_swap_total = BigInt.asUintN(64, v.swap_total - this.prevswapTotal);
-    w.writeLeb12864(delta_swap_total);
-    this.prevswapTotal = v.swap_total;
-    const delta_cached_bytes = BigInt.asUintN(64, v.cached_bytes - this.prevcachedBytes);
-    w.writeLeb12864(delta_cached_bytes);
-    this.prevcachedBytes = v.cached_bytes;
-    w.flushToByteBoundary();
-    if (v._unknown.length > 0) {
-      w.writeRawBytes(v._unknown);
-    }
-  }
-  reset() {
-    this.prevusedBytes = 0n;
-    this.prevtotalBytes = 0n;
-    this.prevswapUsed = 0n;
-    this.prevswapTotal = 0n;
-    this.prevcachedBytes = 0n;
-  }
-};
-var MemorySnapshotDecoder = class {
-  prevusedBytes = 0n;
-  prevtotalBytes = 0n;
-  prevswapUsed = 0n;
-  prevswapTotal = 0n;
-  prevcachedBytes = 0n;
-  decode(r) {
-    const delta_used_bytes = r.readLeb12864();
-    const used_bytes = BigInt.asUintN(64, this.prevusedBytes + delta_used_bytes);
-    this.prevusedBytes = used_bytes;
-    const delta_total_bytes = r.readLeb12864();
-    const total_bytes = BigInt.asUintN(64, this.prevtotalBytes + delta_total_bytes);
-    this.prevtotalBytes = total_bytes;
-    const delta_swap_used = r.readLeb12864();
-    const swap_used = BigInt.asUintN(64, this.prevswapUsed + delta_swap_used);
-    this.prevswapUsed = swap_used;
-    const delta_swap_total = r.readLeb12864();
-    const swap_total = BigInt.asUintN(64, this.prevswapTotal + delta_swap_total);
-    this.prevswapTotal = swap_total;
-    const delta_cached_bytes = r.readLeb12864();
-    const cached_bytes = BigInt.asUintN(64, this.prevcachedBytes + delta_cached_bytes);
-    this.prevcachedBytes = cached_bytes;
-    r.flushToByteBoundary();
-    const _unknown = r.readRemaining();
-    return { used_bytes, total_bytes, swap_used, swap_total, cached_bytes, _unknown };
-  }
-  reset() {
-    this.prevusedBytes = 0n;
-    this.prevtotalBytes = 0n;
-    this.prevswapUsed = 0n;
-    this.prevswapTotal = 0n;
-    this.prevcachedBytes = 0n;
-  }
-};
-function encodeDiskInfo(v, w) {
-  w.writeString(v.name);
-  w.writeString(v.mount);
-  w.writeU32(v.total_gb);
-  w.writeU32(v.used_gb);
-  w.writeU64(v.read_bps);
-  w.writeU64(v.write_bps);
-  w.flushToByteBoundary();
-  if (v._unknown.length > 0) {
-    w.writeRawBytes(v._unknown);
-  }
 }
 function decodeDiskInfo(r) {
   const name = r.readString();
@@ -827,17 +674,6 @@ function decodeDiskInfo(r) {
   const _unknown = r.readRemaining();
   return { name, mount, total_gb, used_gb, read_bps, write_bps, _unknown };
 }
-function encodeNetworkInfo(v, w) {
-  w.writeString(v.name);
-  w.writeU64(v.rx_bps);
-  w.writeU64(v.tx_bps);
-  w.writeU64(v.total_rx);
-  w.writeU64(v.total_tx);
-  w.flushToByteBoundary();
-  if (v._unknown.length > 0) {
-    w.writeRawBytes(v._unknown);
-  }
-}
 function decodeNetworkInfo(r) {
   const name = r.readString();
   const rx_bps = r.readU64();
@@ -847,36 +683,6 @@ function decodeNetworkInfo(r) {
   r.flushToByteBoundary();
   const _unknown = r.readRemaining();
   return { name, rx_bps, tx_bps, total_rx, total_tx, _unknown };
-}
-var ProcessState = {
-  Running: "Running",
-  Sleeping: "Sleeping",
-  Stopped: "Stopped",
-  Zombie: "Zombie",
-  Unknown: "Unknown"
-};
-function encodeProcessState(v, w) {
-  let disc;
-  switch (v) {
-    case "Running":
-      disc = 0;
-      break;
-    case "Sleeping":
-      disc = 1;
-      break;
-    case "Stopped":
-      disc = 2;
-      break;
-    case "Zombie":
-      disc = 3;
-      break;
-    case "Unknown":
-      disc = 4;
-      break;
-    default:
-      throw new Error(`Unknown ProcessState variant: ${v}`);
-  }
-  w.writeBits(disc, 3);
 }
 function decodeProcessState(r) {
   const disc = r.readBits(3);
@@ -895,19 +701,6 @@ function decodeProcessState(r) {
       throw new Error(`Unknown ProcessState discriminant: ${disc}`);
   }
 }
-function encodeProcessInfo(v, w) {
-  w.writeU32(v.pid);
-  w.writeString(v.name);
-  w.writeU8(v.cpu_pct);
-  w.writeU32(v.mem_mb);
-  w.enterNested();
-  encodeProcessState(v.state, w);
-  w.leaveNested();
-  w.flushToByteBoundary();
-  if (v._unknown.length > 0) {
-    w.writeRawBytes(v._unknown);
-  }
-}
 function decodeProcessInfo(r) {
   const pid = r.readU32();
   const name = r.readString();
@@ -920,19 +713,6 @@ function decodeProcessInfo(r) {
   const _unknown = r.readRemaining();
   return { pid, name, cpu_pct, mem_mb, state, _unknown };
 }
-function encodeSystemInfo(v, w) {
-  w.writeString(v.hostname);
-  w.writeString(v.os_name);
-  w.writeString(v.os_version);
-  w.writeString(v.kernel);
-  w.writeU64(v.uptime_secs);
-  w.writeString(v.cpu_brand);
-  w.writeU8(v.cpu_count);
-  w.flushToByteBoundary();
-  if (v._unknown.length > 0) {
-    w.writeRawBytes(v._unknown);
-  }
-}
 function decodeSystemInfo(r) {
   const hostname = r.readString();
   const os_name = r.readString();
@@ -944,92 +724,6 @@ function decodeSystemInfo(r) {
   r.flushToByteBoundary();
   const _unknown = r.readRemaining();
   return { hostname, os_name, os_version, kernel, uptime_secs, cpu_brand, cpu_count, _unknown };
-}
-function encodeTelemetryFrame(v, w) {
-  w.flushToByteBoundary();
-  switch (v.tag) {
-    case "Cpu": {
-      w.writeLeb128(0);
-      const payloadW = new BitWriter();
-      payloadW.enterNested();
-      encodeCpuSnapshot(v.snapshot, payloadW);
-      payloadW.leaveNested();
-      payloadW.flushToByteBoundary();
-      const payload = payloadW.finish();
-      w.writeLeb128(payload.length);
-      w.writeRawBytes(payload);
-      break;
-    }
-    case "Memory": {
-      w.writeLeb128(1);
-      const payloadW = new BitWriter();
-      payloadW.enterNested();
-      encodeMemorySnapshot(v.snapshot, payloadW);
-      payloadW.leaveNested();
-      payloadW.flushToByteBoundary();
-      const payload = payloadW.finish();
-      w.writeLeb128(payload.length);
-      w.writeRawBytes(payload);
-      break;
-    }
-    case "Disks": {
-      w.writeLeb128(2);
-      const payloadW = new BitWriter();
-      payloadW.writeLeb128(v.disks.length);
-      for (const item of v.disks) {
-        payloadW.enterNested();
-        encodeDiskInfo(item, payloadW);
-        payloadW.leaveNested();
-      }
-      payloadW.flushToByteBoundary();
-      const payload = payloadW.finish();
-      w.writeLeb128(payload.length);
-      w.writeRawBytes(payload);
-      break;
-    }
-    case "Network": {
-      w.writeLeb128(3);
-      const payloadW = new BitWriter();
-      payloadW.writeLeb128(v.interfaces.length);
-      for (const item of v.interfaces) {
-        payloadW.enterNested();
-        encodeNetworkInfo(item, payloadW);
-        payloadW.leaveNested();
-      }
-      payloadW.flushToByteBoundary();
-      const payload = payloadW.finish();
-      w.writeLeb128(payload.length);
-      w.writeRawBytes(payload);
-      break;
-    }
-    case "Processes": {
-      w.writeLeb128(4);
-      const payloadW = new BitWriter();
-      payloadW.writeLeb128(v.top.length);
-      for (const item of v.top) {
-        payloadW.enterNested();
-        encodeProcessInfo(item, payloadW);
-        payloadW.leaveNested();
-      }
-      payloadW.flushToByteBoundary();
-      const payload = payloadW.finish();
-      w.writeLeb128(payload.length);
-      w.writeRawBytes(payload);
-      break;
-    }
-    case "System": {
-      w.writeLeb128(5);
-      const payloadW = new BitWriter();
-      payloadW.enterNested();
-      encodeSystemInfo(v.info, payloadW);
-      payloadW.leaveNested();
-      payloadW.flushToByteBoundary();
-      const payload = payloadW.finish();
-      w.writeLeb128(payload.length);
-      w.writeRawBytes(payload);
-      break;
-    }
-  }
 }
 function decodeTelemetryFrame(r) {
   r.flushToByteBoundary();
@@ -1110,29 +804,248 @@ function decodeTelemetryFrame(r) {
     }
   }
 }
-export {
-  BitReader,
-  CpuSnapshotDecoder,
-  CpuSnapshotEncoder,
-  MemorySnapshotDecoder,
-  MemorySnapshotEncoder,
-  ProcessState,
-  SCHEMA_HASH,
-  SchemaHandshake,
-  decodeCpuSnapshot,
-  decodeDiskInfo,
-  decodeMemorySnapshot,
-  decodeNetworkInfo,
-  decodeProcessInfo,
-  decodeProcessState,
-  decodeSystemInfo,
-  decodeTelemetryFrame,
-  encodeCpuSnapshot,
-  encodeDiskInfo,
-  encodeMemorySnapshot,
-  encodeNetworkInfo,
-  encodeProcessInfo,
-  encodeProcessState,
-  encodeSystemInfo,
-  encodeTelemetryFrame
-};
+
+// frontend/app.ts
+var totalBytes = 0;
+var lastSecondBytes = 0;
+var $ = (id) => document.getElementById(id);
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1048576) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / 1048576).toFixed(1)} MB`;
+}
+function formatUptime(secs) {
+  const d = Math.floor(secs / 86400);
+  const h = Math.floor(secs % 86400 / 3600);
+  const m = Math.floor(secs % 3600 / 60);
+  if (d > 0) return `${d}d ${h}h ${m}m`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m`;
+}
+function barColor(pct) {
+  if (pct >= 90) return "r";
+  if (pct >= 70) return "a";
+  return "g";
+}
+function setBar(id, pct, color) {
+  const el = $(id);
+  el.style.width = pct.toFixed(1) + "%";
+  if (color) el.className = "bar-f " + color;
+}
+function renderCpu(frame, bytes) {
+  const s = frame.snapshot;
+  $("cpu-val").textContent = String(s.overall);
+  setBar("cpu-bar", s.overall, barColor(s.overall));
+  $("cpu-freq").textContent = String(s.frequency);
+  $("cpu-bytes").textContent = String(bytes);
+  const box = $("cores");
+  while (box.children.length > s.per_core.length) box.lastChild.remove();
+  s.per_core.forEach((u, i) => {
+    let div = box.children[i];
+    if (!div) {
+      div = document.createElement("div");
+      div.className = "core";
+      const cb = document.createElement("div");
+      cb.className = "cb";
+      const cf = document.createElement("div");
+      cf.className = "cf";
+      cb.appendChild(cf);
+      const cl = document.createElement("div");
+      cl.className = "cl";
+      div.appendChild(cb);
+      div.appendChild(cl);
+      box.appendChild(div);
+    }
+    div.querySelector(".cf").style.height = u + "%";
+    div.querySelector(".cl").textContent = u + "%";
+  });
+}
+function renderMemory(frame, bytes) {
+  const s = frame.snapshot;
+  const usedGB = (Number(s.used_bytes) / 1073741824).toFixed(1);
+  const totalGB = (Number(s.total_bytes) / 1073741824).toFixed(1);
+  const pct = Number(s.total_bytes) > 0 ? Number(s.used_bytes) / Number(s.total_bytes) * 100 : 0;
+  $("mem-val").textContent = usedGB;
+  setBar("mem-bar", pct, pct > 85 ? "r" : pct > 70 ? "a" : "bl");
+  $("mem-detail").textContent = `${usedGB} / ${totalGB} GB (${pct.toFixed(1)}%)`;
+  $("mem-bytes").textContent = String(bytes);
+  $("mem-swap").textContent = formatBytes(Number(s.swap_used));
+  $("mem-swap-total").textContent = formatBytes(Number(s.swap_total));
+  $("mem-cached").textContent = formatBytes(Number(s.cached_bytes));
+  const avail = Number(s.total_bytes) - Number(s.used_bytes);
+  $("mem-avail").textContent = formatBytes(avail > 0 ? avail : 0);
+}
+function renderDisks(frame, bytes) {
+  $("disk-bytes").textContent = String(bytes);
+  const box = $("disks");
+  box.textContent = "";
+  for (const d of frame.disks) {
+    const pct = d.total_gb > 0 ? d.used_gb / d.total_gb * 100 : 0;
+    const row = document.createElement("div");
+    row.className = "ur";
+    const name = document.createElement("span");
+    name.className = "un";
+    name.textContent = d.name || d.mount;
+    name.title = d.mount;
+    const barWrap = document.createElement("span");
+    barWrap.className = "ub";
+    const barTrack = document.createElement("div");
+    barTrack.className = "bar-t";
+    const barFill = document.createElement("div");
+    barFill.className = "bar-f " + barColor(pct);
+    barFill.style.width = pct.toFixed(1) + "%";
+    barTrack.appendChild(barFill);
+    barWrap.appendChild(barTrack);
+    const val = document.createElement("span");
+    val.className = "uv";
+    val.textContent = `${d.used_gb} / ${d.total_gb} GB`;
+    row.appendChild(name);
+    row.appendChild(barWrap);
+    row.appendChild(val);
+    box.appendChild(row);
+  }
+  if (frame.disks.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "detail";
+    empty.textContent = "No disks detected";
+    box.appendChild(empty);
+  }
+}
+function renderNetwork(frame, bytes) {
+  $("net-bytes").textContent = String(bytes);
+  const box = $("networks");
+  box.textContent = "";
+  for (const n of frame.interfaces) {
+    const row = document.createElement("div");
+    row.className = "ur";
+    const name = document.createElement("span");
+    name.className = "un";
+    name.textContent = n.name;
+    const info = document.createElement("span");
+    info.className = "ub";
+    info.style.fontFamily = "var(--mono)";
+    info.style.fontSize = "0.68rem";
+    info.style.color = "var(--text-dim)";
+    info.textContent = `\u2193 ${formatBytes(Number(n.rx_bps))}/s  \u2191 ${formatBytes(Number(n.tx_bps))}/s`;
+    const total = document.createElement("span");
+    total.className = "uv";
+    total.textContent = `${formatBytes(Number(n.total_rx))} total`;
+    row.appendChild(name);
+    row.appendChild(info);
+    row.appendChild(total);
+    box.appendChild(row);
+  }
+  if (frame.interfaces.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "detail";
+    empty.textContent = "No interfaces detected";
+    box.appendChild(empty);
+  }
+}
+function renderProcesses(frame, bytes) {
+  $("proc-bytes").textContent = String(bytes);
+  const tbody = $("procs");
+  tbody.textContent = "";
+  for (const p of frame.top) {
+    const tr = document.createElement("tr");
+    const tdPid = document.createElement("td");
+    tdPid.className = "dm";
+    tdPid.textContent = String(p.pid);
+    const tdName = document.createElement("td");
+    tdName.className = "nm";
+    tdName.textContent = p.name;
+    const tdCpu = document.createElement("td");
+    tdCpu.className = "n";
+    tdCpu.textContent = p.cpu_pct + "%";
+    const tdMem = document.createElement("td");
+    tdMem.className = "n";
+    tdMem.textContent = p.mem_mb + " MB";
+    const tdState = document.createElement("td");
+    const badge = document.createElement("span");
+    badge.className = "st st-" + p.state;
+    badge.textContent = p.state;
+    tdState.appendChild(badge);
+    tr.appendChild(tdPid);
+    tr.appendChild(tdName);
+    tr.appendChild(tdCpu);
+    tr.appendChild(tdMem);
+    tr.appendChild(tdState);
+    tbody.appendChild(tr);
+  }
+}
+function renderSystem(frame) {
+  const i = frame.info;
+  $("sys-host").textContent = i.hostname;
+  $("sys-os").textContent = `${i.os_name} ${i.os_version}`;
+  $("sys-kernel").textContent = i.kernel;
+  $("sys-cpu").textContent = `${i.cpu_brand} (${i.cpu_count} cores)`;
+  $("sys-uptime").textContent = formatUptime(Number(i.uptime_secs));
+}
+function connect() {
+  const el = $("status");
+  el.textContent = "connecting";
+  el.className = "badge connecting";
+  const ws = new WebSocket(`ws://${location.host}/ws`);
+  ws.binaryType = "arraybuffer";
+  ws.onopen = () => {
+    const hs = new SchemaHandshake(SCHEMA_HASH, "0.1.0");
+    ws.send(hs.encode());
+    el.textContent = "handshake";
+  };
+  ws.onmessage = (e) => {
+    if (typeof e.data === "string") {
+      el.textContent = e.data;
+      el.className = "badge error";
+      ws.close();
+      return;
+    }
+    el.textContent = "live";
+    el.className = "badge live";
+    const bytes = new Uint8Array(e.data);
+    const size = bytes.length;
+    totalBytes += size;
+    lastSecondBytes += size;
+    try {
+      const r = new BitReader(bytes);
+      const frame = decodeTelemetryFrame(r);
+      switch (frame.tag) {
+        case "Cpu":
+          renderCpu(frame, size);
+          break;
+        case "Memory":
+          renderMemory(frame, size);
+          break;
+        case "Disks":
+          renderDisks(frame, size);
+          break;
+        case "Network":
+          renderNetwork(frame, size);
+          break;
+        case "Processes":
+          renderProcesses(frame, size);
+          break;
+        case "System":
+          renderSystem(frame);
+          break;
+      }
+      $("update-time").textContent = (/* @__PURE__ */ new Date()).toLocaleTimeString();
+    } catch (err) {
+      console.error("decode error", err);
+    }
+  };
+  ws.onclose = () => {
+    el.textContent = "disconnected";
+    el.className = "badge error";
+    setTimeout(connect, 2e3);
+  };
+  ws.onerror = () => ws.close();
+}
+setInterval(() => {
+  const bps = lastSecondBytes;
+  const jsonEstimate = bps * 12;
+  $("wire-bps").textContent = String(bps);
+  $("json-equiv").textContent = `~${jsonEstimate}`;
+  $("savings").textContent = jsonEstimate > 0 ? `${((1 - bps / jsonEstimate) * 100).toFixed(0)}%` : "--";
+  lastSecondBytes = 0;
+}, 1e3);
+connect();

@@ -7,9 +7,101 @@
 <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-<h1>vexmon</h1>
-<p id="status">Connecting...</p>
-<pre id="log"></pre>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">vexmon<span> — system monitor</span></div>
+    <span class="badge connecting" id="status">connecting</span>
+  </div>
+  <div class="header-right">
+    <div class="wire-stat">wire: <span class="v" id="wire-bps">--</span> B/s</div>
+    <div class="wire-stat">json equiv: <span id="json-equiv">--</span> B/s</div>
+    <div class="wire-stat">savings: <span class="v" id="savings">--</span></div>
+  </div>
+</div>
+
+<div class="sysbar" id="sysbar">
+  <span>host: <span class="val" id="sys-host">--</span></span>
+  <span>os: <span class="val" id="sys-os">--</span></span>
+  <span>kernel: <span class="val" id="sys-kernel">--</span></span>
+  <span>cpu: <span class="val" id="sys-cpu">--</span></span>
+  <span>uptime: <span class="val" id="sys-uptime">--</span></span>
+</div>
+
+<div class="grid">
+  <!-- CPU -->
+  <div class="panel">
+    <div class="ph">
+      <span class="t">CPU</span>
+      <span class="b"><em id="cpu-bytes">--</em> bytes</span>
+    </div>
+    <div class="big"><span id="cpu-val">--</span><span class="u">%</span></div>
+    <div class="bar-t"><div class="bar-f g" id="cpu-bar" style="width:0%"></div></div>
+    <div class="detail"><span id="cpu-freq">--</span> MHz</div>
+    <div class="cores" id="cores"></div>
+  </div>
+
+  <!-- Memory -->
+  <div class="panel">
+    <div class="ph">
+      <span class="t">Memory</span>
+      <span class="b"><em id="mem-bytes">--</em> bytes</span>
+    </div>
+    <div class="big"><span id="mem-val">--</span><span class="u"> GB</span></div>
+    <div class="bar-t"><div class="bar-f bl" id="mem-bar" style="width:0%"></div></div>
+    <div class="detail" id="mem-detail">-- / -- GB</div>
+    <div class="mem-row">
+      <div class="mem-item"><div class="ml">Swap Used</div><div class="mv" id="mem-swap">--</div></div>
+      <div class="mem-item"><div class="ml">Swap Total</div><div class="mv" id="mem-swap-total">--</div></div>
+      <div class="mem-item"><div class="ml">Cached</div><div class="mv" id="mem-cached">--</div></div>
+      <div class="mem-item"><div class="ml">Available</div><div class="mv" id="mem-avail">--</div></div>
+    </div>
+  </div>
+
+  <!-- Disk -->
+  <div class="panel">
+    <div class="ph">
+      <span class="t">Disk</span>
+      <span class="b"><em id="disk-bytes">--</em> bytes</span>
+    </div>
+    <div id="disks"></div>
+  </div>
+
+  <!-- Network -->
+  <div class="panel">
+    <div class="ph">
+      <span class="t">Network</span>
+      <span class="b"><em id="net-bytes">--</em> bytes</span>
+    </div>
+    <div id="networks"></div>
+  </div>
+
+  <!-- Processes -->
+  <div class="panel full">
+    <div class="ph">
+      <span class="t">Processes</span>
+      <span class="b"><em id="proc-bytes">--</em> bytes</span>
+    </div>
+    <table class="dt">
+      <thead>
+        <tr>
+          <th>PID</th>
+          <th>Name</th>
+          <th class="n">CPU</th>
+          <th class="n">Memory</th>
+          <th>State</th>
+        </tr>
+      </thead>
+      <tbody id="procs"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">
+  <span>powered by <a href="https://github.com/vexil-lang/vexil" target="_blank">vexil</a> bitpack wire format</span>
+  <span id="update-time">--</span>
+</div>
+
 <script type="module" src="/bundle.js"></script>
 </body>
 </html>
