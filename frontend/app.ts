@@ -328,13 +328,17 @@ function connect() {
   ws.onerror = () => ws.close();
 }
 
-// BPS tracker — 5-second rolling average for smooth display
+// BPS tracker — 5-second rolling average + peak for context
+let peakBps = 0;
+
 setInterval(() => {
   bpsHistory.push(lastSecondBytes);
   if (bpsHistory.length > BPS_WINDOW) bpsHistory.shift();
   const avgBps = Math.round(bpsHistory.reduce((a, b) => a + b, 0) / bpsHistory.length);
+  if (lastSecondBytes > peakBps) peakBps = lastSecondBytes;
   const jsonEstimate = avgBps * 12;
   $('wire-bps').textContent = String(avgBps);
+  $('wire-peak').textContent = String(peakBps);
   $('json-equiv').textContent = `~${jsonEstimate}`;
   $('savings').textContent = jsonEstimate > 0 ? `${((1 - avgBps / jsonEstimate) * 100).toFixed(0)}%` : '--';
   lastSecondBytes = 0;
